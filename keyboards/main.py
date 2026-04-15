@@ -1,5 +1,12 @@
-from aiogram.types import ReplyKeyboardMarkup
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
+
+
+def onboarding_kb() -> InlineKeyboardMarkup:
+    """Inline keyboard shown to new users during onboarding."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="❓ Что это?", callback_data="onboarding_what")
+    return builder.as_markup()
 
 
 def start_kb() -> ReplyKeyboardMarkup:

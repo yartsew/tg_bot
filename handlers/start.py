@@ -9,12 +9,12 @@ import string
 from aiogram import F, Router
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
-from sqlalchemy import select
+from aiogram.types import CallbackQuery, Message
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import User
-from keyboards.main import main_menu_kb, start_kb
+from keyboards.main import main_menu_kb, onboarding_kb, start_kb
 from services import referral as referral_service
 
 router = Router()
@@ -76,23 +76,66 @@ async def cmd_start(
                 referrer_code=ref_code,
             )
 
-        welcome_text = (
+        # Count total players (including the one just registered)
+        count_result = await session.execute(select(func.count(User.id)))
+        total_players = count_result.scalar_one()
+
+        # Onboarding message with player count + "Что это?" button
+        await message.answer(
             f"👋 Добро пожаловать в <b>Кулинарный Синдикат</b>, "
             f"<b>{message.from_user.first_name}</b>!\n\n"
-            f"🍳 Здесь завтраки превращаются в прогресс.\n"
-            f"Загружай фото завтрака, проходи квизы, копи SC и расти в рядах Синдиката.\n\n"
-            f"Выбери действие в меню ниже:"
+            f"👥 В Синдикате уже <b>{total_players}</b> поваров.\n\n"
+            f"Нажми <b>«Что это?»</b>, чтобы узнать, как всё работает,\n"
+            f"или сразу выбери действие в меню ниже:",
+            reply_markup=onboarding_kb(),
+            parse_mode="HTML",
         )
-    else:
-        # --- Existing user — just show main menu ---
-        welcome_text = (
-            f"С возвращением, <b>{message.from_user.first_name}</b>! 🍽\n\n"
-            f"Выбери действие:"
+        await message.answer(
+            "Главное меню:",
+            reply_markup=main_menu_kb(),
+            parse_mode="HTML",
         )
+        return
 
+    # --- Existing user — just show main menu ---
     await message.answer(
-        welcome_text,
+        f"С возвращением, <b>{message.from_user.first_name}</b>! 🍽\n\n"
+        f"Выбери действие:",
         reply_markup=main_menu_kb(),
+        parse_mode="HTML",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Onboarding — explain what this bot is
+# ---------------------------------------------------------------------------
+
+_ONBOARDING_TEXT = (
+    "🍳 <b>Кулинарный Синдикат</b> — это клуб осознанных завтраков.\n\n"
+    "<b>Как играть:</b>\n"
+    "1. Каждое утро загружай фото завтрака — получай XP\n"
+    "2. Другие участники оценивают твоё фото (P2P-проверка)\n"
+    "3. Проходи ежедневный квиз <i>«Специя дня»</i> за бонусные SC\n"
+    "4. Копи XP → повышай уровень → открывай награды в Battle Pass\n"
+    "5. Зарабатывай SC (Syndicate Coins) и трать их на подписку\n\n"
+    "<b>Что дальше:</b>\n"
+    "— На уровне 10 выбираешь ветку: 🥩 Мясник или 🥗 Веган\n"
+    "— На уровне 50 становишься наставником и получаешь реферальный код\n"
+    "— Каждый месяц среди подписчиков разыгрывается призовой фонд\n"
+    "— Приведи 10 друзей на платную подписку → следующий месяц бесплатно\n\n"
+    "Начни прямо сейчас — отправь фото завтрака через <b>🍳 Квест дня</b>!"
+)
+
+
+@router.callback_query(F.data == "onboarding_what")
+async def cb_onboarding_what(
+    callback: CallbackQuery,
+    **data,
+) -> None:
+    """Show full game explanation."""
+    await callback.answer()
+    await callback.message.edit_text(
+        _ONBOARDING_TEXT,
         parse_mode="HTML",
     )
 
