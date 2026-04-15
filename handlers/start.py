@@ -14,7 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import User
-from keyboards.main import main_menu_kb, onboarding_join_kb, onboarding_kb
+from keyboards.main import main_menu_kb, onboarding_join_kb, onboarding_kb, what_is_this_kb
 from services import referral as referral_service
 
 router = Router()
@@ -53,11 +53,19 @@ async def cmd_start(
     existing_user: User | None = result.scalar_one_or_none()
 
     if existing_user is not None:
+        count_result = await session.execute(select(func.count(User.id)))
+        total_players = count_result.scalar_one()
+
         await message.answer(
             f"С возвращением, <b>{message.from_user.first_name}</b>! 🍽\n\n"
+            f"👥 В Синдикате уже <b>{total_players}</b> поваров.\n\n"
             f"Выбери действие:",
-            reply_markup=main_menu_kb(),
+            reply_markup=what_is_this_kb(),
             parse_mode="HTML",
+        )
+        await message.answer(
+            "Главное меню:",
+            reply_markup=main_menu_kb(),
         )
         return
 

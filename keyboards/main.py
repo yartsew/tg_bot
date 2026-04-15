@@ -18,6 +18,13 @@ def onboarding_join_kb() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+def what_is_this_kb() -> InlineKeyboardMarkup:
+    """Inline keyboard for returning users — only 'Что это?' button."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="❓ Что это?", callback_data="onboarding_what")
+    return builder.as_markup()
+
+
 def start_kb() -> ReplyKeyboardMarkup:
     """Keyboard shown to unregistered users — single 'Start' button."""
     builder = ReplyKeyboardBuilder()
