@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import config
 from database.models import AdminSetting, ControlPhoto, QuizQuestion, Subscription, User
-from keyboards.main import start_kb
+from keyboards.main import onboarding_kb, start_kb
 from keyboards.admin import admin_menu_kb, confirm_kb, settings_kb
 from states.forms import AdminStates
 
@@ -631,13 +631,24 @@ async def fallback_unregistered(
     session: AsyncSession,
     **data,
 ) -> None:
-    """Show 'Начать' button to users who haven't run /start yet."""
+    """Show player count, 'Что это?' and 'Начать' to unregistered users."""
     result = await session.execute(
         select(User).where(User.telegram_id == message.from_user.id)
     )
     if result.scalar_one_or_none() is None:
+        count_result = await session.execute(select(func.count(User.id)))
+        total_players = count_result.scalar_one()
+
         await message.answer(
-            "👋 Привет! Нажми кнопку ниже, чтобы начать:",
+            f"👋 Привет! Это <b>Кулинарный Синдикат</b>.\n\n"
+            f"👥 В Синдикате уже <b>{total_players}</b> поваров.\n\n"
+            f"Нажми <b>«Что это?»</b>, чтобы узнать как играть,\n"
+            f"или сразу жми <b>«🚀 Начать»</b>:",
+            reply_markup=onboarding_kb(),
+            parse_mode="HTML",
+        )
+        await message.answer(
+            "👇",
             reply_markup=start_kb(),
         )
 
