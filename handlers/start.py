@@ -6,7 +6,7 @@ from __future__ import annotations
 import secrets
 import string
 
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
@@ -14,10 +14,21 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import User
-from keyboards.main import main_menu_kb
+from keyboards.main import main_menu_kb, start_kb
 from services import referral as referral_service
 
 router = Router()
+
+
+@router.message(F.text == "🚀 Начать")
+async def btn_start(
+    message: Message,
+    session: AsyncSession,
+    state: FSMContext,
+    **data,
+) -> None:
+    """Handle '🚀 Начать' button — same as /start."""
+    await cmd_start(message, session=session, state=state)
 
 
 @router.message(CommandStart())
@@ -84,3 +95,20 @@ async def cmd_start(
         reply_markup=main_menu_kb(),
         parse_mode="HTML",
     )
+
+
+@router.message()
+async def fallback_unregistered(
+    message: Message,
+    session: AsyncSession,
+    **data,
+) -> None:
+    """Show 'Начать' button to users who haven't run /start yet."""
+    result = await session.execute(
+        select(User).where(User.telegram_id == message.from_user.id)
+    )
+    if result.scalar_one_or_none() is None:
+        await message.answer(
+            "👋 Привет! Нажми кнопку ниже, чтобы начать:",
+            reply_markup=start_kb(),
+        )

@@ -225,10 +225,9 @@ async def cb_get_avatar(
     photo_bytes = photo_bytes_io.read()
 
     # Generate branded avatar via service
-    avatar_bytes = await avatar_service.generate_avatar(
-        session=session,
-        user=user,
+    avatar_bytes = avatar_service.generate_avatar(
         photo_bytes=photo_bytes,
+        level=user.level or 1,
     )
 
     await callback.message.answer_photo(

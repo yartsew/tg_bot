@@ -117,6 +117,32 @@ async def run_monthly_drawing(
     return winners
 
 
+async def get_last_drawing_result(session: AsyncSession) -> dict | None:
+    """Return the most recent lottery winner info, or None if no drawing has happened."""
+    from datetime import datetime
+    now = datetime.utcnow()
+    last_month = (now.replace(day=1) - __import__("datetime").timedelta(days=1)).strftime("%Y-%m")
+
+    result = await session.execute(
+        select(LotteryTicket).where(
+            LotteryTicket.is_winner.is_(True),
+            LotteryTicket.lottery_month == last_month,
+        ).limit(1)
+    )
+    ticket = result.scalar_one_or_none()
+    if ticket is None:
+        return None
+
+    user_result = await session.execute(
+        select(User).where(User.id == ticket.user_id)
+    )
+    winner = user_result.scalar_one_or_none()
+    winner_name = f"@{winner.username}" if winner and winner.username else "Анонимный повар"
+
+    fund = await get_monthly_fund(session)
+    return {"winner_name": winner_name, "prize": round(fund / 3, 2)}
+
+
 async def get_monthly_fund(session: AsyncSession) -> float:
     """Delegate to subscription service to get the current month's prize fund."""
     from services import subscription as subscription_service  # lazy import

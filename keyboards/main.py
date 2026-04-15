@@ -2,6 +2,14 @@ from aiogram.types import ReplyKeyboardMarkup
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 
+def start_kb() -> ReplyKeyboardMarkup:
+    """Keyboard shown to unregistered users — single 'Start' button."""
+    builder = ReplyKeyboardBuilder()
+    builder.button(text="🚀 Начать")
+    builder.adjust(1)
+    return builder.as_markup(resize_keyboard=True)
+
+
 def main_menu_kb() -> ReplyKeyboardMarkup:
     """Main reply keyboard shown to all registered users."""
     builder = ReplyKeyboardBuilder()
