@@ -6,6 +6,15 @@ def onboarding_kb() -> InlineKeyboardMarkup:
     """Inline keyboard shown to new users during onboarding."""
     builder = InlineKeyboardBuilder()
     builder.button(text="❓ Что это?", callback_data="onboarding_what")
+    builder.button(text="✅ Вступить в Синдикат", callback_data="onboarding_register")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def onboarding_join_kb() -> InlineKeyboardMarkup:
+    """Inline keyboard shown on the 'Что это?' screen — only join button."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="✅ Вступить в Синдикат", callback_data="onboarding_register")
     return builder.as_markup()
 
 
