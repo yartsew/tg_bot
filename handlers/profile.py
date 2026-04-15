@@ -69,6 +69,40 @@ async def cmd_profile(
 
 
 # ---------------------------------------------------------------------------
+# /wallet — SC balance + recent transactions
+# ---------------------------------------------------------------------------
+
+@router.message(F.text == "💰 Кошелёк")
+async def cmd_wallet(
+    message: Message,
+    session: AsyncSession,
+    user: User | None,
+    **data,
+) -> None:
+    """Show SC balance and last 10 transactions."""
+    if user is None:
+        await message.answer("Сначала введи /start, чтобы зарегистрироваться.")
+        return
+
+    transactions = await coins_service.get_transactions(session, user.id, limit=10)
+
+    lines = []
+    for tx in transactions:
+        sign = "+" if tx.amount > 0 else ""
+        date_str = tx.created_at.strftime("%d.%m %H:%M") if tx.created_at else "—"
+        lines.append(f"<code>{date_str}</code>  {sign}{tx.amount} SC — {tx.description}")
+
+    history_text = "\n".join(lines) if lines else "Транзакций пока нет."
+
+    await message.answer(
+        f"🪙 <b>Кошелёк</b>\n\n"
+        f"Баланс: <b>{user.sc_balance} SC</b>\n\n"
+        f"<b>Последние операции:</b>\n{history_text}",
+        parse_mode="HTML",
+    )
+
+
+# ---------------------------------------------------------------------------
 # sc_history — show last 20 SC transactions
 # ---------------------------------------------------------------------------
 

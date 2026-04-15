@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import config
 from database.models import AdminSetting, ControlPhoto, QuizQuestion, Subscription, User
+from keyboards.main import start_kb
 from keyboards.admin import admin_menu_kb, confirm_kb, settings_kb
 from states.forms import AdminStates
 
@@ -618,3 +619,25 @@ async def cb_admin_exit(
     await callback.answer("Выход из панели.")
     await state.clear()
     await callback.message.edit_text("🛠 Панель администратора закрыта.")
+
+
+# ---------------------------------------------------------------------------
+# Fallback — catch-all for unregistered users (must be in last router)
+# ---------------------------------------------------------------------------
+
+@router.message()
+async def fallback_unregistered(
+    message: Message,
+    session: AsyncSession,
+    **data,
+) -> None:
+    """Show 'Начать' button to users who haven't run /start yet."""
+    result = await session.execute(
+        select(User).where(User.telegram_id == message.from_user.id)
+    )
+    if result.scalar_one_or_none() is None:
+        await message.answer(
+            "👋 Привет! Нажми кнопку ниже, чтобы начать:",
+            reply_markup=start_kb(),
+        )
+

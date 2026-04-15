@@ -97,18 +97,3 @@ async def cmd_start(
     )
 
 
-@router.message()
-async def fallback_unregistered(
-    message: Message,
-    session: AsyncSession,
-    **data,
-) -> None:
-    """Show 'Начать' button to users who haven't run /start yet."""
-    result = await session.execute(
-        select(User).where(User.telegram_id == message.from_user.id)
-    )
-    if result.scalar_one_or_none() is None:
-        await message.answer(
-            "👋 Привет! Нажми кнопку ниже, чтобы начать:",
-            reply_markup=start_kb(),
-        )
